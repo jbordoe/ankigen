@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/ruby.min.js"></script>
+    <style>
+        body { padding: 1rem; }
+        .hint-container { margin-top: 1rem; }
+        .hint-content {
+            display: none;
+            background-color: var(--pico-background-color);
+            border: 1px dashed var(--pico-primary);
+            padding: 0.5rem;
+            border-radius: var(--pico-border-radius);
+            margin-top: 0.5rem;
+        }
+        .collapsible-header {
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+        .collapsible-content {
+            display: none;
+            padding-left: 1rem;
+        }
+        .collapsible-content.active {
+            display: block;
+        }
+        /* Multiple choice explanation styling */
+        .explanation-hover-trigger {
+            cursor: help;
+            color: var(--pico-primary);
+            font-weight: bold;
+        }
+        .explanation-tooltip {
+            visibility: hidden;
+            background-color: var(--pico-background-color);
+            color: var(--pico-color);
+            text-align: left;
+            border-radius: var(--pico-border-radius);
+            padding: 5px 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%; /* Position above the text */
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            width: 200px; /* Adjust as needed */
+            box-shadow: var(--pico-card-shadow);
+        }
+        .explanation-tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: var(--pico-background-color) transparent transparent transparent;
+        }
+        .explanation-hover-trigger:hover .explanation-tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        .collapsible-mc-content {
+            display: none;
+            padding-left: 1rem;
+            background-color: var(--pico-background-color);
+            border-left: 2px solid var(--pico-primary);
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <article>
+        <h1>{{ card.title }}</h1>
+        {% if card.front_question_text %}
+            <p><strong>Question:</strong> {{ card.front_question_text }}</p>
+        {% endif %}
+
+        {% if card.front_question_context %}
+            <p><strong>Context:</strong> {{ card.front_question_context }}</p>
+        {% endif %}
+
+        {% if card.front_question_example %}
+            <p><strong>Example:</strong> {{ card.front_question_example | safe }}</p>
+        {% endif %}
+
+        {% if card.front_question_code %}
+            <pre><code class="language-ruby">{{ card.front_question_code }}</code></pre>
+        {% endif %}
+
+        {% if card.front_question_media %}
+            {% if card.front_question_media.image %}
+                <figure>
+                    <img src="{{ card.front_question_media.image }}" alt="Card Image" style="max-width: 100%; height: auto;">
+                </figure>
+            {% endif %}
+            {% if card.front_question_media.audio %}
+                <audio controls>
+                    <source src="{{ card.front_question_media.audio }}" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+            {% endif %}
+        {% endif %}
+
+        {% if card.front_question_multiple_choice %}
+            <h3>Choices:</h3>
+            <ul>
+                {% for option in card.front_question_multiple_choice %}
+                    <li>
+                        {{ option.choice_letter }}. {{ option.text | safe }}
+                        {% if option.explanation %}
+                            {# You can choose 'hover' or 'collapsible' here, or make it dynamic #}
+                            {# For simplicity, let's use a basic collapsible for now #}
+                            <details style="display:inline-block; margin-left: 0.5rem;">
+                                <summary style="display:inline; cursor:pointer;">?</summary>
+                                <p>{{ option.explanation }}</p>
+                            </details>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% if card.front_question_hint %}
+            <div class="hint-container">
+                <button onclick="toggleHint(this)">Show Hint</button>
+                <div class="hint-content">
+                    <p>{{ card.front_question_hint }}</p>
+                </div>
+            </div>
+        {% endif %}
+    </article>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+        });
+
+        function toggleHint(button) {
+            const hintContent = button.nextElementSibling;
+            if (hintContent.style.display === "block") {
+                hintContent.style.display = "none";
+                button.textContent = "Show Hint";
+            } else {
+                hintContent.style.display = "block";
+                button.textContent = "Hide Hint";
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,13 +1,19 @@
 import os
 import logging
-from rich.logging import RichHandler
+import sys
+
+from rich.logging import RichHandler, Console
 
 from ankigen.agents.flashcard_workflow import FlashcardGenerator, FlashcardState
+from ankigen.utils.template_manager import render_anki_card_to_html
 
 # Configure rich logging
 FORMAT = "%(message)s"
 logging.basicConfig(
-    level="INFO", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+    level="INFO",
+    format=FORMAT,
+    datefmt="[%X]",
+    handlers=[RichHandler(console=Console(stderr=True))]
 )
 log = logging.getLogger("rich")
 
@@ -29,7 +35,11 @@ final_state: FlashcardState = generator.invoke(
     }
 )
 
-log.info("\n--- All Generated Flashcards (Structured Data) ---")
+#log.info("\n--- All Generated Flashcards (Structured Data) ---")
+#for i, card_obj in enumerate(final_state["all_generated_cards"]):
+    #    log.info(f"\n--- Card {i+1} (Pydantic Object) ---")
+#    print(card_obj.model_dump_json(indent=2))
+
 for i, card_obj in enumerate(final_state["all_generated_cards"]):
-    log.info(f"\n--- Card {i+1} (Pydantic Object) ---")
-    print(card_obj.model_dump_json(indent=2))
+    card_html = render_anki_card_to_html(card_obj)
+    print(card_html['front'], card_html['back'])
