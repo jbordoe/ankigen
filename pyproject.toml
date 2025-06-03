@@ -10,6 +10,7 @@ dependencies = [
     "ipdb>=0.13.13",
     "jinja2>=3.1.6",
     "genanki>=0.13.1",
+    "typer>=0.16.0",
 ]
 
 [build-system]
