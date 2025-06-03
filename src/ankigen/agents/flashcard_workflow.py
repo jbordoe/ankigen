@@ -1,10 +1,13 @@
 import logging
+import os
+import sqlite3
 from typing import List, TypedDict, Optional
 
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.sqlite import SqliteSaver
 
 from ankigen.models.anki_card import AnkiCard
 
@@ -16,8 +19,9 @@ class FlashcardState(TypedDict):
     `num_cards` is now part of the state, passed at invocation.
     """
     topic: str
-    num_cards: int # New: Number of cards to generate in this specific run
-    concepts_for_generation: List[str] # Flat list of concepts
+    num_cards: int
+    overall_cards_generated_count: int
+    concepts_for_generation: List[str]
     all_generated_cards: List[AnkiCard] # Stores AnkiCard Pydantic objects
     overall_process_complete: bool
 
@@ -30,7 +34,14 @@ class FlashcardGenerator:
     def __init__(self, llm_model_name: str = "gemini-2.0-flash"):
         self.llm = ChatGoogleGenerativeAI(model=llm_model_name, temperature=0.7)
         self.anki_card_parser = JsonOutputParser(pydantic_object=AnkiCard)
-        self.app = self._compile_workflow()
+
+        # Ensure checkpoints directory exists
+        os.makedirs("checkpoints", exist_ok=True)
+        # NB: check_same_thread=False is fine here as implementation uses a lock
+        # to ensure thread safety
+        conn = sqlite3.connect("checkpoints/ankigen_graph.sqlite", check_same_thread=False)
+        self.checkpointer = SqliteSaver(conn)
+        self.workflow = self._compile_workflow()
 
     def _compile_workflow(self):
         """
@@ -57,13 +68,17 @@ class FlashcardGenerator:
                 "finish": END
             }
         )
-        return workflow.compile()
+        return workflow.compile(checkpointer=self.checkpointer)
 
     def _generate_initial_concepts(self, state: FlashcardState) -> FlashcardState:
         """
         Node to generate an initial flat list of concepts for the given topic.
         Uses num_cards from the state.
         """
+        if state["concepts_for_generation"]:
+            log.info("Concepts already generated. Skipping.")
+            return state
+
         topic = state["topic"]
         num_cards = state["num_cards"] # Access from state
         log.info(f"Generating {num_cards} concepts for topic: {topic}...")
@@ -81,6 +96,7 @@ class FlashcardGenerator:
             "concepts_for_generation": concepts,
             "all_generated_cards": [],
             "overall_process_complete": False,
+            "overall_cards_generated_count": 0,
             "num_cards": num_cards # Keep num_cards in state for consistency if needed downstream
         }
 
@@ -92,7 +108,7 @@ class FlashcardGenerator:
             log.info("No more concepts to generate cards for.")
             return state # No changes, signifies completion via router
 
-        concept = state["concepts_for_generation"].pop(0)
+        concept = state["concepts_for_generation"][0]
         log.info(f"Generating flashcard for concept: '{concept}' under topic: '{state['topic']}'...")
 
         card_prompt = PromptTemplate.from_template(
@@ -117,6 +133,7 @@ class FlashcardGenerator:
                 "concepts_for_generation": state["concepts_for_generation"],
                 "all_generated_cards": updated_cards,
                 "overall_process_complete": False,
+                "overall_cards_generated_count": state["overall_cards_generated_count"] + 1,
                 "num_cards": state["num_cards"] # Keep num_cards in state
             }
         except Exception as e:
@@ -126,8 +143,11 @@ class FlashcardGenerator:
                 "concepts_for_generation": state["concepts_for_generation"],
                 "all_generated_cards": state["all_generated_cards"],
                 "overall_process_complete": False,
+                "overall_cards_generated_count": state["overall_cards_generated_count"],
                 "num_cards": state["num_cards"] # Keep num_cards in state
             }
+        finally:
+            state["concepts_for_generation"].pop(0)
 
     def _check_completion(self, state: FlashcardState) -> str:
         """
@@ -139,9 +159,25 @@ class FlashcardGenerator:
             log.info("All flashcards generated.")
             return "finish"
 
-    def invoke(self, initial_state: FlashcardState) -> FlashcardState:
+    def invoke(self, input_state: FlashcardState, session_id: str = None) -> FlashcardState:
         """
         Invokes the compiled LangGraph application.
-        The initial_state must now include 'num_cards'.
+
+        Args:
+            input_state (FlashcardState): The initial state for the workflow.
+            session_id (str, optional): The session ID to use for checkpointing. Defaults to None.
+
+        Returns:
+            FlashcardState: The final state of the workflow.
         """
-        return self.app.invoke(initial_state)
+        initial_state = {
+            "topic": input_state["topic"],
+            "num_cards": input_state["num_cards"],
+        }
+
+        log.info(f"Invoking workflow with initial state: {initial_state}")
+        final_state: FlashcardState = self.workflow.invoke(
+            initial_state,
+            config={"configurable": {"thread_id": session_id}}
+        )
+        return final_state

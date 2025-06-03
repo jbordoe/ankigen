@@ -34,3 +34,11 @@ To generate an Anki deck:
 
 ```bash
 python ankigen/main.py generate --topic "Advanced Ruby Metaprogramming" --num-cards 5
+
+#### Resume Generation
+
+To resume a previous session:
+
+```bash
+python ankigen/main.py generate --topic "Erlang OTP Best Practices" --num-cards 5 --session-id "my-session-id"
+```

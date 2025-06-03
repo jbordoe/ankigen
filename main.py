@@ -1,8 +1,9 @@
 import os
 import logging
+import sys
 import typer
 from typing_extensions import Annotated
-import sys
+import uuid
 
 from rich.logging import RichHandler, Console
 from typing import List
@@ -68,7 +69,15 @@ def generate(
             help="The name of the Anki deck inside Anki. Defaults to 'Generated Flashcards: [Topic]'.",
             show_default=False
         )
-    ] = None # Will be set based on topic if not provided
+    ] = None, # Will be set based on topic if not provided
+   session_id: Annotated[
+        str,
+        typer.Option(
+            "--session-id", "-s",
+            help="Unique ID for this generation session (for resuming). If not provided, a new one is generated.",
+            show_default=False
+        )
+    ] = None,
 ):
     """
     Generates a new Anki deck with flashcards for a specified topic.
@@ -80,14 +89,22 @@ def generate(
     if deck_name is None:
         deck_name = f"Generated Flashcards: {topic}"
 
-    log.info(f"Starting flashcard generation for topic: '{topic}', aiming for {num_cards} cards.")
+    # Generate a new session ID if not provided
+    if session_id is None:
+        session_id = str(uuid.uuid4())
+        log.info(f"No session ID provided. Generating new session ID: {session_id}")
+    else:
+        log.info(f"Using provided session ID: {session_id} (Attempting to resume workflow)")
+
+    log.info(f"Starting flashcard generation for topic: '{topic}', aiming for {num_cards} cards using model: '{model_name}'.")
 
     generator = FlashcardGenerator(llm_model_name=model_name)
     final_state: FlashcardState = generator.invoke(
         {
             "topic": topic,
             "num_cards": num_cards
-        }
+        },
+        session_id=session_id
     )
 
     generated_cards: List[AnkiCard] = final_state["all_generated_cards"]
@@ -102,7 +119,7 @@ def generate(
 
 # --- Create and Package the Anki Deck ---
     deck_name = topic
-    deck_output_filepath = "decks/Generated Ruby Flashcards.apkg"
+    deck_output_filepath = os.path.join("decks", output_filename)
 
     log.info(f"\n--- Creating Anki Deck: '{deck_name}' ---")
 

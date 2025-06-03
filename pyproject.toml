@@ -11,6 +11,8 @@ dependencies = [
     "jinja2>=3.1.6",
     "genanki>=0.13.1",
     "typer>=0.16.0",
+    "langgraph>=0.4.8",
+    "langgraph-checkpoint-sqlite>=2.0.10",
 ]
 
 [build-system]
