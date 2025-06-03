@@ -18,18 +18,15 @@ jinja_env = Environment(
     autoescape=select_autoescape(['html', 'xml'])
 )
 
-def render_anki_card_to_html(card: AnkiCard) -> str:
+def render_anki_card_to_html(card: AnkiCard, template_name: str) -> str:
     """
     Renders an AnkiCard Pydantic object into HTML strings
     """
     try:
-        front_template = jinja_env.get_template("front.html")
-        back_template = jinja_env.get_template("back.html")
+        template = jinja_env.get_template(template_name)
+        card_html = template.render(card=card)
 
-        front_html = front_template.render(card=card)
-        back_html = back_template.render(card=card)
-
-        return {'front': front_html, 'back': back_html}
+        return card_html
     except Exception as e:
         log.error(f"Error rendering template: {e}")
-        return {}
+        return None

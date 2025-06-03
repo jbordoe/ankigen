@@ -3,9 +3,11 @@ import logging
 import sys
 
 from rich.logging import RichHandler, Console
+from typing import List
 
 from ankigen.agents.flashcard_workflow import FlashcardGenerator, FlashcardState
-from ankigen.utils.template_manager import render_anki_card_to_html
+from ankigen.packagers.anki_deck_packager import AnkiDeckPackager
+from ankigen.models.anki_card import AnkiCard
 
 # Configure rich logging
 FORMAT = "%(message)s"
@@ -21,7 +23,6 @@ if not os.environ.get("GOOGLE_API_KEY"):
     log.error("GOOGLE_API_KEY environment variable not set. Please set it to your Google Cloud API key.")
     exit(1)
 
-# --- Initialize and Run the Flashcard Generator ---
 initial_topic = "Advanced Ruby Programming"
 num_cards_to_generate = 3
 
@@ -35,11 +36,23 @@ final_state: FlashcardState = generator.invoke(
     }
 )
 
+generated_cards: List[AnkiCard] = final_state["all_generated_cards"]
+if not generated_cards:
+    log.warning("No flashcards were generated. Exiting.")
+    exit(0)
+
 #log.info("\n--- All Generated Flashcards (Structured Data) ---")
 #for i, card_obj in enumerate(final_state["all_generated_cards"]):
     #    log.info(f"\n--- Card {i+1} (Pydantic Object) ---")
 #    print(card_obj.model_dump_json(indent=2))
 
-for i, card_obj in enumerate(final_state["all_generated_cards"]):
-    card_html = render_anki_card_to_html(card_obj)
-    print(card_html['front'], card_html['back'])
+# --- Create and Package the Anki Deck ---
+deck_name = initial_topic
+deck_output_filepath = "decks/Generated Ruby Flashcards.apkg"
+
+log.info(f"\n--- Creating Anki Deck: '{deck_name}' ---")
+
+packager = AnkiDeckPackager(deck_name=deck_name)
+packager.package_deck(generated_cards, deck_output_filepath)
+
+log.info(f"Anki deck generation complete. File saved to: {deck_output_filepath}")
