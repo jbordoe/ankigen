@@ -13,6 +13,7 @@ dependencies = [
     "typer>=0.16.0",
     "langgraph>=0.4.8",
     "langgraph-checkpoint-sqlite>=2.0.10",
+    "pyqt5>=5.15.11",
 ]
 
 [build-system]
