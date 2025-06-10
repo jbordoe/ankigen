@@ -10,8 +10,9 @@ from typing import List
 
 from ankigen.agents.flashcard_workflow import FlashcardGenerator, FlashcardState
 from ankigen.agents.iterative_flashcard_workflow import IterativeFlashcardGenerator, IterativeFlashcardState
-from ankigen.packagers.anki_deck_packager import AnkiDeckPackager
 from ankigen.models.anki_card import AnkiCard
+from ankigen.packagers.anki_deck_packager import AnkiDeckPackager
+from ankigen.utils.template_manager import list_templates, is_valid_template
 
 # Configure rich logging
 FORMAT = "%(message)s"
@@ -79,6 +80,14 @@ def generate(
             show_default=False
         )
     ] = None,
+    template: Annotated[
+        str,
+        typer.Option(
+            "--template", "-r",
+        help=f"The template to use for rendering flashcards. Accepts: {','.join(list_templates())}",
+            show_default=True
+        )
+    ] = 'basic',
 ):
     """
     Generates a new Anki deck with flashcards for a specified topic.
@@ -134,7 +143,7 @@ def generate(
 
     log.info(f"\n--- Creating Anki Deck: '{deck_name}' ---")
 
-    packager = AnkiDeckPackager(deck_name=deck_name)
+    packager = AnkiDeckPackager(deck_name=deck_name, template=template)
     packager.package_deck(generated_cards, deck_output_filepath)
 
     log.info(f"Anki deck generation complete. File saved to: {deck_output_filepath}")

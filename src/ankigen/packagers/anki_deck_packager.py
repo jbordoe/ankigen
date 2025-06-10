@@ -23,6 +23,7 @@ class AnkiDeckPackager:
 
     DEFAULT_ANKI_MODEL_NAME = 'Custom Flashcard Model'
     DEFAULT_ANKI_DECK_NAME = 'Generated Flashcards'
+    DEFAULT_TEMPLATE = 'basic'
 
     ANKI_CSS = """
         /* Basic styling for Anki cards */
@@ -37,13 +38,21 @@ class AnkiDeckPackager:
            but most styling is handled by pico.css and highlight.js in the HTML templates. */
     """
 
-    def __init__(self, model_id: int = None, deck_id: int = None, deck_name: str = None):
+    def __init__(
+            self,
+            model_id: int = None,
+            deck_id: int = None,
+            deck_name: str = None,
+            template: str = None
+    ):
         """
         Initializes the AnkiDeckPackager with optional custom IDs and deck name.
         """
         self.model_id = model_id if model_id is not None else self.MY_MODEL_ID
         self.deck_id = deck_id if deck_id is not None else self.MY_DECK_ID
         self.deck_name = deck_name if deck_name is not None else self.DEFAULT_ANKI_DECK_NAME
+        self.template = template if template is not None else self.DEFAULT_TEMPLATE
+        self.css = '' if self.template == 'basic' else self.ANKI_CSS
 
         self._anki_model = self._define_anki_model()
         self._anki_deck = self._define_anki_deck()
@@ -66,7 +75,7 @@ class AnkiDeckPackager:
                     'afmt': '{{Back}}',
                 },
             ],
-            css=self.ANKI_CSS
+            css=self.css
         )
 
     def _define_anki_deck(self) -> genanki.Deck:
@@ -82,8 +91,8 @@ class AnkiDeckPackager:
         """
         Renders an AnkiCard object to HTML and adds it as a note to the Anki deck.
         """
-        front_html = render_anki_card_to_html(card_obj, "front.html")
-        back_html = render_anki_card_to_html(card_obj, "back.html")
+        front_html = render_anki_card_to_html(card_obj, "front", template=self.template)
+        back_html = render_anki_card_to_html(card_obj, "back", template=self.template)
 
         if not front_html or not back_html:
             log.warning(f"Skipping card due to rendering error for '{card_obj.title or card_obj.front_question_text}'")
