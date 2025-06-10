@@ -9,6 +9,7 @@ from rich.logging import RichHandler, Console
 from typing import List
 
 from ankigen.agents.flashcard_workflow import FlashcardGenerator, FlashcardState
+from ankigen.agents.iterative_flashcard_workflow import IterativeFlashcardGenerator, IterativeFlashcardState
 from ankigen.packagers.anki_deck_packager import AnkiDeckPackager
 from ankigen.models.anki_card import AnkiCard
 
@@ -98,11 +99,21 @@ def generate(
 
     log.info(f"Starting flashcard generation for topic: '{topic}', aiming for {num_cards} cards using model: '{model_name}'.")
 
-    generator = FlashcardGenerator(llm_model_name=model_name)
-    final_state: FlashcardState = generator.invoke(
+#    generator = FlashcardGenerator(llm_model_name=model_name)
+#    final_state: FlashcardState = generator.invoke(
+#        {
+#            "topic": topic,
+#            "num_cards": num_cards
+#        },
+#        session_id=session_id
+#    )
+    generator = IterativeFlashcardGenerator(llm_model_name=model_name)
+    final_state: IterativeFlashcardState = generator.invoke(
         {
             "topic": topic,
-            "num_cards": num_cards
+            "max_cards": num_cards,
+            "max_iterations": 5,
+            "cards_per_iteration": 5
         },
         session_id=session_id
     )
