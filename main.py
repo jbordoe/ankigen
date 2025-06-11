@@ -1,6 +1,5 @@
 import os
 import logging
-import sys
 import typer
 from typing_extensions import Annotated
 import uuid
@@ -8,11 +7,10 @@ import uuid
 from rich.logging import RichHandler, Console
 from typing import List
 
-from ankigen.agents.flashcard_workflow import FlashcardGenerator, FlashcardState
 from ankigen.agents.iterative_flashcard_workflow import IterativeFlashcardGenerator, IterativeFlashcardState
 from ankigen.models.anki_card import AnkiCard
 from ankigen.packagers.anki_deck_packager import AnkiDeckPackager
-from ankigen.utils.template_manager import list_templates, is_valid_template
+from ankigen.utils.template_manager import list_templates
 
 # Configure rich logging
 FORMAT = "%(message)s"

@@ -1,13 +1,13 @@
 import sys
 import logging
-import os
 
+from typing import List
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QLineEdit, QPushButton, QTextEdit, QComboBox, QSpinBox,
     QFileDialog, QMessageBox
 )
-from PyQt5.QtCore import Qt, QThread, pyqtSignal # For threading
+from PyQt5.QtCore import QThread, pyqtSignal # For threading
 
 from ankigen.agents.iterative_flashcard_workflow import IterativeFlashcardGenerator, IterativeFlashcardState
 from ankigen.models.anki_card import AnkiCard

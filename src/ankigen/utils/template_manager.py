@@ -47,4 +47,4 @@ def is_valid_template(template_name: str) -> bool:
     """
     Checks if a given template name is valid.
     """
-    return template_name in list_valid_templates()
+    return template_name in list_templates()

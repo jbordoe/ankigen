@@ -3,7 +3,7 @@ import logging
 import os
 import re
 import sqlite3
-from typing import List, TypedDict, Optional
+from typing import List, TypedDict
 
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
@@ -74,7 +74,7 @@ class IterativeFlashcardGenerator:
     # Generate inital batch of concepts for given topic
     def _identify_initial_concepts(self, state: IterativeFlashcardState) -> IterativeFlashcardState:
         if state.get("concepts_to_process") and len(state["concepts_to_process"]) > 0:
-            log.info(f"Concepts already loaded, Skipping initial step.")
+            log.info("Concepts already loaded, Skipping initial step.")
             return state
 
         topic = state["topic"]
@@ -115,7 +115,7 @@ class IterativeFlashcardGenerator:
         max_cards = state.get("max_cards", 100)
 
         if not concepts_to_process:
-            log.info(f"No more concepts to process, stopping.")
+            log.info("No more concepts to process, stopping.")
             return state
 
         batch_concepts = concepts_to_process[:cards_per_iteration]

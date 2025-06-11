@@ -1,4 +1,4 @@
-from typing import List, Dict, TypedDict, Optional
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 class CardMedia(BaseModel):

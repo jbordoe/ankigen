@@ -2,7 +2,7 @@ import os
 import logging
 import genanki
 import random
-from typing import List, Dict, Tuple, Set
+from typing import List
 
 from ankigen.models.anki_card import AnkiCard
 from ankigen.utils.template_manager import render_anki_card_to_html # Import the HTML renderer

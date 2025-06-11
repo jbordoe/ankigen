@@ -1,4 +1,3 @@
-import pytest
 from ankigen.models.anki_card import AnkiCard
 from ankigen.models.anki_card import CardMedia
 from ankigen.models.anki_card import MultipleChoiceOption
