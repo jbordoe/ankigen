@@ -1,47 +1,32 @@
 import json
 import logging
-import os
 import re
-import sqlite3
-from typing import List, TypedDict
+from typing import List, TypedDict, Dict, Any, Optional
 
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph, END
-from langgraph.checkpoint.sqlite import SqliteSaver
 
 from ankigen.models.anki_card import AnkiCard
+from ankigen.workflows.base_workflow import BaseWorkflow, BaseState
 
 log = logging.getLogger("rich")
 
-class IterativeFlashcardState(TypedDict):
+class IterativeFlashcardState(BaseState):
     """
     Represents the state of the flashcard generation workflow.
     """
-    topic: str
-    all_generated_cards: List[AnkiCard]
     concepts_to_process: List[str]
     llm_completion_status: str # Indicator from LLM: e.g., "MORE_NEEDED", "COMPLETE"
     iteration_count: int
-    overall_process_complete: bool
     cards_per_iteration: int
     max_cards: int
     max_iterations: int
 
-class IterativeFlashcardGenerator:
+class IterativeFlashcardGenerator(BaseWorkflow):
     def __init__(self, llm_model_name: str = "gemini-2.0-flash", include_categories: bool = False):
-        self.llm = ChatGoogleGenerativeAI(model=llm_model_name, temperature=0.7)
-        self.anki_card_parser = JsonOutputParser(pydantic_object=AnkiCard)
-
         self.include_categories = include_categories
-        # Ensure checkpoints directory exists
-        os.makedirs("checkpoints", exist_ok=True)
-        # NB: check_same_thread=False is fine here as implementation uses a lock
-        # to ensure thread safety
-        conn = sqlite3.connect("checkpoints/ankigen_graph.sqlite", check_same_thread=False)
-        self.checkpointer = SqliteSaver(conn)
-        self.workflow = self._compile_workflow()
+        super().__init__(llm_model_name)
 
     def _compile_workflow(self):
         if self.include_categories:
@@ -325,7 +310,7 @@ class IterativeFlashcardGenerator:
                 log.info("No more concepts or conditions to continue iteration. Ending process.")
                 return "end_process"
 
-    def invoke(self, input_state: IterativeFlashcardState, session_id: str = None) -> IterativeFlashcardState:
+    def invoke(self, input_state: Dict[str, Any], session_id: Optional[str] = None) -> IterativeFlashcardState:
         """
             Invokes the iterative flashcard workflow with the given input state.
 
@@ -349,9 +334,11 @@ class IterativeFlashcardGenerator:
             "overall_process_complete": False,
         }
 
+        self._log_workflow_start("IterativeFlashcardGenerator", input_state)
         log.info(f"Starting iterative flashcard workflow for topic: {initial_workflow_state['topic']}")
         final_state: IterativeFlashcardState = self.workflow.invoke(
             initial_workflow_state,
             config={"configurable": {"thread_id": session_id}}
         )
+        self._log_workflow_complete("IterativeFlashcardGenerator", final_state)
         return final_state

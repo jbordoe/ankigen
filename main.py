@@ -7,15 +7,18 @@ import uuid
 from rich.logging import RichHandler, Console
 from typing import List
 
-from ankigen.agents.iterative_flashcard_workflow import IterativeFlashcardGenerator, IterativeFlashcardState
+from ankigen.workflows import (
+    TopicWorkflow, ModuleWorkflow, SubjectWorkflow,
+    IterativeFlashcardGenerator, IterativeFlashcardState
+)
 from ankigen.models.anki_card import AnkiCard
 from ankigen.packagers.anki_deck_packager import AnkiDeckPackager
 from ankigen.utils.template_manager import list_templates
 
-# Configure rich logging
 FORMAT = "%(message)s"
+log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
-    level="INFO",
+    level=log_level,
     format=FORMAT,
     datefmt="[%X]",
     handlers=[RichHandler(console=Console(stderr=True))]
@@ -86,6 +89,14 @@ def generate(
             show_default=True
         )
     ] = 'basic',
+    workflow: Annotated[
+        str,
+        typer.Option(
+            "--workflow", "-w",
+            help="Workflow type: 'topic' (single topic), 'module' (module with topics), 'subject' (multi-module subject), 'iterative' (legacy iterative)",
+            show_default=True
+        )
+    ] = 'module',
 ):
     """
     Generates a new Anki deck with flashcards for a specified topic.
@@ -104,26 +115,56 @@ def generate(
     else:
         log.info(f"Using provided session ID: {session_id} (Attempting to resume workflow)")
 
-    log.info(f"Starting flashcard generation for topic: '{topic}', aiming for {num_cards} cards using model: '{model_name}'.")
+    log.info(f"Starting flashcard generation for topic: '{topic}', aiming for {num_cards} cards using model: '{model_name}' with '{workflow}' workflow.")
 
-#    generator = FlashcardGenerator(llm_model_name=model_name)
-#    final_state: FlashcardState = generator.invoke(
-#        {
-#            "topic": topic,
-#            "num_cards": num_cards
-#        },
-#        session_id=session_id
-#    )
-    generator = IterativeFlashcardGenerator(llm_model_name=model_name)
-    final_state: IterativeFlashcardState = generator.invoke(
-        {
-            "topic": topic,
-            "max_cards": num_cards,
-            "max_iterations": 5,
-            "cards_per_iteration": 5
-        },
-        session_id=session_id
-    )
+    # Select and run appropriate workflow
+    if workflow == "topic":
+        # Single topic with focused concepts
+        generator = TopicWorkflow(llm_model_name=model_name)
+        final_state = generator.invoke(
+            {
+                "topic": "General",  # Generic module
+                "subtopic": topic,
+                "num_cards": num_cards
+            },
+            session_id=session_id
+        )
+    elif workflow == "module":
+        # Break module into topics (default)
+        generator = ModuleWorkflow(llm_model_name=model_name)
+        final_state = generator.invoke(
+            {
+                "topic": topic,
+                "cards_per_topic": max(2, num_cards // 3)  # Distribute cards across topics
+            },
+            session_id=session_id
+        )
+    elif workflow == "subject":
+        # Multi-module subject approach
+        generator = SubjectWorkflow(llm_model_name=model_name)
+        final_state = generator.invoke(
+            {
+                "topic": topic,
+                "subject_name": deck_name,
+                "cards_per_module": num_cards
+            },
+            session_id=session_id
+        )
+    elif workflow == "iterative":
+        # Legacy iterative workflow
+        generator = IterativeFlashcardGenerator(llm_model_name=model_name)
+        final_state = generator.invoke(
+            {
+                "topic": topic,
+                "max_cards": num_cards,
+                "max_iterations": 5,
+                "cards_per_iteration": 5
+            },
+            session_id=session_id
+        )
+    else:
+        log.error(f"Unknown workflow type: {workflow}")
+        raise typer.Exit(code=1)
 
     generated_cards: List[AnkiCard] = final_state["all_generated_cards"]
     if not generated_cards:

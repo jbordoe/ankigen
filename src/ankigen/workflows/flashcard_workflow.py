@@ -1,47 +1,31 @@
 import logging
-import os
-import sqlite3
-from typing import List, TypedDict
+from typing import List, Dict, Any, Optional
 
 from langchain_core.prompts import PromptTemplate
-from langchain_core.output_parsers import JsonOutputParser
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph, END
-from langgraph.checkpoint.sqlite import SqliteSaver
 
 from ankigen.models.anki_card import AnkiCard
+from ankigen.workflows.base_workflow import BaseWorkflow, BaseState
 
 log = logging.getLogger("rich")
 
-class FlashcardState(TypedDict):
+class FlashcardState(BaseState):
     """
     Represents the state of the flashcard generation workflow.
     `num_cards` is now part of the state, passed at invocation.
     """
-    topic: str
     num_cards: int
     overall_cards_generated_count: int
     concepts_for_generation: List[str]
-    all_generated_cards: List[AnkiCard] # Stores AnkiCard Pydantic objects
-    overall_process_complete: bool
 
-class FlashcardGenerator:
+class FlashcardGenerator(BaseWorkflow):
     """
     A class to encapsulate the LangGraph workflow for generating Anki flashcards.
     Allows for parameterization of the LLM model.
     The number of cards is now passed per invocation.
     """
     def __init__(self, llm_model_name: str = "gemini-2.0-flash"):
-        self.llm = ChatGoogleGenerativeAI(model=llm_model_name, temperature=0.7)
-        self.anki_card_parser = JsonOutputParser(pydantic_object=AnkiCard)
-
-        # Ensure checkpoints directory exists
-        os.makedirs("checkpoints", exist_ok=True)
-        # NB: check_same_thread=False is fine here as implementation uses a lock
-        # to ensure thread safety
-        conn = sqlite3.connect("checkpoints/ankigen_graph.sqlite", check_same_thread=False)
-        self.checkpointer = SqliteSaver(conn)
-        self.workflow = self._compile_workflow()
+        super().__init__(llm_model_name)
 
     def _compile_workflow(self):
         """
@@ -159,7 +143,7 @@ class FlashcardGenerator:
             log.info("All flashcards generated.")
             return "finish"
 
-    def invoke(self, input_state: FlashcardState, session_id: str = None) -> FlashcardState:
+    def invoke(self, input_state: Dict[str, Any], session_id: Optional[str] = None) -> FlashcardState:
         """
         Invokes the compiled LangGraph application.
 
@@ -175,9 +159,11 @@ class FlashcardGenerator:
             "num_cards": input_state["num_cards"],
         }
 
+        self._log_workflow_start("FlashcardGenerator", input_state)
         log.info(f"Invoking workflow with initial state: {initial_state}")
         final_state: FlashcardState = self.workflow.invoke(
             initial_state,
             config={"configurable": {"thread_id": session_id}}
         )
+        self._log_workflow_complete("FlashcardGenerator", final_state)
         return final_state
