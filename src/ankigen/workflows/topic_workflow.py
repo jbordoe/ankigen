@@ -120,7 +120,7 @@ Return valid JSON matching the same structure."""
         else:
             # Zero-shot prompting (original behavior) 
             prompt = PromptTemplate.from_template(
-                f"Generate an Anki flashcard for concept '{{concept}}' within subtopic '{{subtopic}}' of topic '{{topic}}'. "
+                "Generate an Anki flashcard for concept '{concept}' within subtopic '{subtopic}' of topic '{topic}'. "
                 "Include question, answer, and explanation. "
                 "Return valid JSON matching AnkiCard format:\n"
                 "{format_instructions}"
