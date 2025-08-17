@@ -38,25 +38,62 @@ Run the `main.py` script using the `typer` CLI.
 To generate an Anki deck from the command line:
 
 ```bash
-python ankigen/main.py generate --topic "Advanced Ruby Metaprogramming" --num-cards 5 --template-type basic
+uv run main.py generate --topic "Advanced Ruby Metaprogramming" --num-cards 15 --workflow module
+```
+
+##### Workflow Types:
+
+AnkiGen supports different workflow types for various learning structures:
+
+* `--workflow topic`: Generate cards for a single focused topic
+* `--workflow module`: Break a module into topics and generate cards (default)
+* `--workflow subject`: Create a comprehensive subject with multiple modules 
+* `--workflow iterative`: Legacy iterative approach
+
+**Examples:**
+
+```bash
+# Single focused topic (10 cards)
+uv run main.py generate --topic "Python List Comprehensions" --num-cards 10 --workflow topic
+
+# Module with multiple topics (default, 20 cards distributed across topics)  
+uv run main.py generate --topic "React Hooks" --num-cards 20 --workflow module
+
+# Comprehensive subject (50 cards across multiple modules)
+uv run main.py generate --topic "Machine Learning" --num-cards 50 --workflow subject
 ```
 
 ##### Options:
 
-* `--topic`, `-t`: The main topic for flashcard generation (e.g., "Machine Learning Basics").
-* `--num-cards`, `-n`: The number of flashcards to generate.
+* `--topic`, `-t`: The main topic/module/subject for flashcard generation (required).
+* `--num-cards`, `-n`: The number of flashcards to generate (required).
+* `--workflow`, `-w`: Workflow type: 'topic', 'module', 'subject', or 'iterative' (default: 'module').
 * `--model`, `-m`: The LLM model name to use (default: `gemini-2.0-flash`).
 * `--output`, `-o`: The filename for the generated `.apkg` file (default: `generated_flashcards.apkg`). The file will be saved in `decks/` directory.
 * `--deck-name`, `-d`: The name of the Anki deck that appears in Anki (default: Generated Flashcards: [Topic]).
-* `--template-type`, `-x`: The type of Anki card template to use ("basic" or "comprehensive").
+* `--template`, `-r`: The Anki card template to use ("basic" or "comprehensive").
 * `--session-id`, `-s`: A unique ID for this generation session (for resuming). If not provided, a new one will be generated.
+
+##### Environment Variables:
+
+* `GOOGLE_API_KEY`: Required Google API key for LLM access.
+* `LOG_LEVEL`: Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL). Default: INFO.
+
+**Examples with environment variables:**
+```bash
+# Enable debug logging for detailed output
+LOG_LEVEL=DEBUG uv run main.py generate --topic "Python Decorators" --num-cards 10
+
+# Minimal logging output
+LOG_LEVEL=WARNING uv run main.py generate --topic "German Grammar" --num-cards 15
+```
 
 #### Resume Generation (CLI)
 
-If, for example, a session crashes or is interrupted, you can resume the workflow by providing the same session ID:
+If a session crashes or is interrupted, you can resume the workflow by providing the same session ID:
 
 ```bash
-python ankigen/main.py generate --topic "Advanced Ruby Metaprogramming" --session-id your_session_id_here
+uv run main.py generate --topic "Advanced Ruby Metaprogramming" --session-id your_session_id_here
 ```
 
 ### Graphical User Interface (GUI) - Work in Progress
@@ -72,7 +109,7 @@ AnkiGen also provides a graphical interface for easier interaction, allowing you
 **How to Run the GUI:**
 
 ```bash
-python gui_app.py
+uv run gui_app.py
 ```
 
 ![AnkiGen GUI Screenshot](docs/images/gui.png)
