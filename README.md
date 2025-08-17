@@ -63,6 +63,23 @@ uv run main.py generate --topic "React Hooks" --num-cards 20 --workflow module
 uv run main.py generate --topic "Machine Learning" --num-cards 50 --workflow subject
 ```
 
+##### Few-Shot vs Zero-Shot Prompting:
+
+AnkiGen supports both zero-shot (default) and few-shot prompting with domain-specific examples:
+
+```bash
+# Zero-shot prompting (default) - no examples provided to LLM
+uv run main.py generate --topic "History of Rome" --num-cards 15
+
+# Few-shot prompting with language learning examples
+uv run main.py generate --topic "Spanish Grammar" --num-cards 15 --domain language
+
+# Few-shot prompting with programming examples  
+uv run main.py generate --topic "Python Functions" --num-cards 10 --domain programming
+```
+
+**Available domains**: `language`, `programming`. Domain examples help the LLM generate cards with appropriate formatting and style for specific subject areas.
+
 ##### Options:
 
 * `--topic`, `-t`: The main topic/module/subject for flashcard generation (required).
@@ -72,6 +89,7 @@ uv run main.py generate --topic "Machine Learning" --num-cards 50 --workflow sub
 * `--output`, `-o`: The filename for the generated `.apkg` file (default: `generated_flashcards.apkg`). The file will be saved in `decks/` directory.
 * `--deck-name`, `-d`: The name of the Anki deck that appears in Anki (default: Generated Flashcards: [Topic]).
 * `--template`, `-r`: The Anki card template to use ("basic" or "comprehensive").
+* `--domain`, `-x`: Domain for few-shot examples: 'language', 'programming', etc. Leave empty for zero-shot prompting.
 * `--session-id`, `-s`: A unique ID for this generation session (for resuming). If not provided, a new one will be generated.
 
 ##### Environment Variables:

@@ -1,0 +1,39 @@
+{
+  "description": "Examples for basic template cards - simple question/answer format",
+  "template_type": "basic",
+  "examples": [
+    {
+      "card_type": "Concept",
+      "topic": "General Knowledge",
+      "subtopic": "Science",
+      "title": "Simple Science Fact",
+      "difficulty": "easy",
+      "tags": ["science", "basic"],
+      "front_question_text": "What is the chemical symbol for water?",
+      "back_answer": "H₂O",
+      "back_explanation": "Water molecules consist of two hydrogen atoms bonded to one oxygen atom."
+    },
+    {
+      "card_type": "Vocabulary", 
+      "topic": "General Knowledge",
+      "subtopic": "Language",
+      "title": "Simple Definition",
+      "difficulty": "easy",
+      "tags": ["vocabulary", "basic"],
+      "front_question_text": "What does 'ubiquitous' mean?",
+      "back_answer": "Present everywhere; widespread",
+      "back_explanation": "From Latin 'ubique' meaning 'everywhere'. Often used to describe technology or phenomena that are found in many places."
+    },
+    {
+      "card_type": "Fact",
+      "topic": "General Knowledge", 
+      "subtopic": "History",
+      "title": "Historical Date",
+      "difficulty": "medium",
+      "tags": ["history", "dates"],
+      "front_question_text": "In what year did World War II end?",
+      "back_answer": "1945",
+      "back_explanation": "World War II ended in 1945 with Germany's surrender in May and Japan's surrender in August after the atomic bombs."
+    }
+  ]
+}

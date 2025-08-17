@@ -1,0 +1,66 @@
+{
+  "description": "Examples for programming and computer science flashcards",
+  "domains": ["programming", "computer science", "coding", "software development"],
+  "examples": [
+    {
+      "card_type": "Concept",
+      "topic": "Python Programming",
+      "subtopic": "Data Structures",
+      "title": "Python List Comprehension Syntax",
+      "difficulty": "medium",
+      "tags": ["python", "list-comprehension", "syntax"],
+      "front_question_text": "What is the syntax for a list comprehension in Python?",
+      "front_question_context": "Creating lists using a concise syntax",
+      "front_question_example": "Create a list of squares from 1 to 5",
+      "back_answer": "[expression for item in iterable if condition]",
+      "back_explanation": "List comprehensions provide a concise way to create lists. The basic syntax includes an expression, a for clause, and an optional if condition.",
+      "back_code_solution": "[x**2 for x in range(1, 6)]  # [1, 4, 9, 16, 25]",
+      "back_related": ["Dictionary comprehension", "Set comprehension", "Generator expressions"]
+    },
+    {
+      "card_type": "Code Snippet",
+      "topic": "JavaScript ES6",
+      "subtopic": "Arrow Functions", 
+      "title": "Arrow Function Syntax",
+      "difficulty": "easy",
+      "tags": ["javascript", "es6", "functions", "arrow-functions"],
+      "front_question_text": "Convert this function to arrow function syntax:",
+      "front_question_code": "function add(a, b) {\n  return a + b;\n}",
+      "front_question_context": "ES6 arrow function conversion",
+      "back_answer": "const add = (a, b) => a + b;",
+      "back_explanation": "Arrow functions provide a shorter syntax. When there's only a return statement, you can omit the braces and return keyword.",
+      "back_related": ["Regular functions", "Function expressions", "this binding"],
+      "back_mnemonics": "() => for arrow, no return needed for single expressions"
+    },
+    {
+      "card_type": "Concept",
+      "topic": "Algorithms",
+      "subtopic": "Time Complexity",
+      "title": "Big O Notation - Linear Time",
+      "difficulty": "medium",
+      "tags": ["algorithms", "big-o", "time-complexity"],
+      "front_question_text": "What is the time complexity of searching through an unsorted array?",
+      "front_question_context": "Linear search algorithm analysis",
+      "front_question_hint": "Consider worst-case scenario",
+      "back_answer": "O(n)",
+      "back_explanation": "Linear search requires checking each element until the target is found or the array ends. In worst case, we check all n elements.",
+      "back_related": ["O(log n) - binary search", "O(1) - constant time", "O(n²) - quadratic time"],
+      "back_mnemonics": "Linear search = Linear time = O(n)"
+    },
+    {
+      "card_type": "Code Snippet",
+      "topic": "React",
+      "subtopic": "Hooks",
+      "title": "useState Hook Basic Usage",
+      "difficulty": "easy",
+      "tags": ["react", "hooks", "state", "useState"],
+      "front_question_text": "Complete the useState hook to manage a counter:",
+      "front_question_code": "const [count, setCount] = _____(0);",
+      "front_question_context": "React functional component state management",
+      "back_answer": "useState",
+      "back_explanation": "useState is a React Hook that lets you add state to functional components. It returns an array with the current state value and a setter function.",
+      "back_code_solution": "const [count, setCount] = useState(0);\n// Usage: setCount(count + 1);",
+      "back_related": ["useEffect", "useContext", "useReducer"]
+    }
+  ]
+}

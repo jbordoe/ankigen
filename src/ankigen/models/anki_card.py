@@ -23,10 +23,12 @@ class AnkiCard(BaseModel):
     All fields are optional by default, except for 'front_question_text' and 'back_answer' which are crucial.
     """
     # Card Metadata
-    type_: Optional[str] = Field(None, description="The type of card (e.g., Vocabulary, Concept, Code Snippet, Scenario).")
+    card_type: Optional[str] = Field(None, description="The type of card (e.g., Vocabulary, Concept, Code Snippet, Scenario).")
     topic: Optional[str] = Field(None, description="The main topic this card belongs to.")
     subtopic: Optional[str] = Field(None, description="A more specific subtopic within the main topic.")
     title: Optional[str] = Field(None, description="A unique, descriptive title for this card.")
+    difficulty: Optional[str] = Field(None, description="The difficulty level of the card (e.g., easy, medium, hard).")
+    tags: Optional[List[str]] = Field(None, description="A list of tags for this card.")
 
     # Front of the Card (Question Section)
     front_question_text: str = Field(description="The main question text for the front of the card.")

@@ -1,0 +1,65 @@
+{
+  "description": "Examples for language learning flashcards",
+  "domains": ["language", "linguistics", "vocabulary", "grammar"],
+  "examples": [
+    {
+      "card_type": "Vocabulary",
+      "topic": "German B1 Vocabulary",
+      "subtopic": "Family Terms",
+      "title": "German Family Vocabulary - Brother",
+      "difficulty": "easy",
+      "tags": ["family", "vocabulary", "masculine-noun"],
+      "front_question_text": "der Bruder",
+      "front_question_context": "German family vocabulary",
+      "front_question_hint": "This is a masculine noun",
+      "back_answer": "brother",
+      "back_explanation": "Masculine noun in German. The article 'der' indicates masculine gender.",
+      "back_related": ["die Schwester (sister)", "die Familie (family)", "der Vater (father)"],
+      "back_mnemonics": "Remember: der = masculine article"
+    },
+    {
+      "card_type": "Grammar",
+      "topic": "Spanish A2 Grammar", 
+      "subtopic": "Past Tense",
+      "title": "Spanish Preterite - To Speak",
+      "difficulty": "medium",
+      "tags": ["grammar", "preterite", "conjugation"],
+      "front_question_text": "How do you say 'I spoke' in Spanish?",
+      "front_question_context": "Using the verb 'hablar' in preterite tense",
+      "front_question_example": "Ayer _____ con mi madre. (Yesterday I spoke with my mother)",
+      "back_answer": "hablé",
+      "back_explanation": "Preterite form of 'hablar' for first person singular. Regular -ar verbs in preterite end in -é for 'yo'.",
+      "back_related": ["hablaste (you spoke)", "habló (he/she spoke)", "hablamos (we spoke)"],
+      "back_mnemonics": "AR verbs: é, aste, ó, amos, asteis, aron"
+    },
+    {
+      "card_type": "Phrases",
+      "topic": "French A1 Communication",
+      "subtopic": "Greetings", 
+      "title": "French Greeting - Good Morning",
+      "difficulty": "easy",
+      "tags": ["greetings", "phrases", "formal"],
+      "front_question_text": "Bonjour",
+      "front_question_context": "French greeting used during daytime",
+      "front_question_hint": "Used until evening time",
+      "back_answer": "Good morning / Hello",
+      "back_explanation": "Standard French greeting used from morning until late afternoon. More formal than 'salut'.",
+      "back_related": ["Bonsoir (good evening)", "Salut (hi/bye)", "Au revoir (goodbye)"]
+    },
+    {
+      "card_type": "Grammar",
+      "topic": "English Grammar",
+      "subtopic": "Conditionals",
+      "title": "Second Conditional Structure",
+      "difficulty": "medium", 
+      "tags": ["conditionals", "grammar", "hypothetical"],
+      "front_question_text": "Complete the second conditional: If I _____ rich, I _____ buy a house.",
+      "front_question_context": "Expressing hypothetical situations",
+      "front_question_hint": "Use past tense in if-clause, would + infinitive in main clause",
+      "back_answer": "were, would",
+      "back_explanation": "Second conditional structure: If + past simple, would + infinitive. Uses 'were' for all persons with the verb 'be'.",
+      "back_related": ["First conditional", "Third conditional", "Zero conditional"],
+      "back_mnemonics": "If + past, would + base form"
+    }
+  ]
+}

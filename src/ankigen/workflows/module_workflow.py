@@ -5,7 +5,6 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from langgraph.graph import StateGraph, END
 
-from ankigen.models.anki_card import AnkiCard
 from ankigen.workflows.base_workflow import BaseWorkflow, BaseState
 from ankigen.workflows.topic_workflow import TopicWorkflow
 

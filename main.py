@@ -5,11 +5,11 @@ from typing_extensions import Annotated
 import uuid
 
 from rich.logging import RichHandler, Console
-from typing import List
+from typing import List, Optional
 
 from ankigen.workflows import (
     TopicWorkflow, ModuleWorkflow, SubjectWorkflow,
-    IterativeFlashcardGenerator, IterativeFlashcardState
+    IterativeFlashcardGenerator
 )
 from ankigen.models.anki_card import AnkiCard
 from ankigen.packagers.anki_deck_packager import AnkiDeckPackager
@@ -97,6 +97,14 @@ def generate(
             show_default=True
         )
     ] = 'module',
+    domain: Annotated[
+        Optional[str],
+        typer.Option(
+            "--domain", "-x",
+            help="Domain for few-shot examples: 'language', 'programming', etc. Leave empty for zero-shot prompting.",
+            show_default=False
+        )
+    ] = None,
 ):
     """
     Generates a new Anki deck with flashcards for a specified topic.
@@ -115,12 +123,15 @@ def generate(
     else:
         log.info(f"Using provided session ID: {session_id} (Attempting to resume workflow)")
 
-    log.info(f"Starting flashcard generation for topic: '{topic}', aiming for {num_cards} cards using model: '{model_name}' with '{workflow}' workflow.")
+    if domain:
+        log.info(f"Starting flashcard generation for topic: '{topic}', aiming for {num_cards} cards using model: '{model_name}' with '{workflow}' workflow and '{domain}' examples.")
+    else:
+        log.info(f"Starting flashcard generation for topic: '{topic}', aiming for {num_cards} cards using model: '{model_name}' with '{workflow}' workflow (zero-shot).")
 
     # Select and run appropriate workflow
     if workflow == "topic":
         # Single topic with focused concepts
-        generator = TopicWorkflow(llm_model_name=model_name)
+        generator = TopicWorkflow(llm_model_name=model_name, domain=domain)
         final_state = generator.invoke(
             {
                 "topic": "General",  # Generic module

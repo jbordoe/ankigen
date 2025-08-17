@@ -1,0 +1,73 @@
+{
+  "description": "Examples for comprehensive template cards - rich format with multiple fields",
+  "template_type": "comprehensive", 
+  "examples": [
+    {
+      "card_type": "Concept",
+      "topic": "Advanced Topic",
+      "subtopic": "Complex Subject",
+      "title": "Comprehensive Example with Multiple Fields",
+      "difficulty": "hard",
+      "tags": ["comprehensive", "detailed", "advanced"],
+      "front_question_text": "Explain the concept and provide implementation details",
+      "front_question_context": "When working with complex systems",
+      "front_question_hint": "Consider both theoretical and practical aspects",
+      "front_question_example": "Real-world scenario: Building a distributed system",
+      "front_question_code": "// Example code structure\nclass DistributedSystem {\n  // Implementation needed\n}",
+      "back_answer": "A comprehensive solution involving multiple components",
+      "back_explanation": "Detailed explanation covering theory, implementation, and best practices. This includes architectural considerations and trade-offs.",
+      "back_collapsibles": [
+        {
+          "title": "Technical Details", 
+          "content": "In-depth technical information that can be expanded when needed."
+        },
+        {
+          "title": "Common Pitfalls",
+          "content": "Things to watch out for and how to avoid common mistakes."
+        },
+        {
+          "title": "Further Reading",
+          "content": "Additional resources and references for deeper understanding."
+        }
+      ],
+      "back_code_solution": "class DistributedSystem {\n  constructor() {\n    this.nodes = [];\n    this.coordinator = new Coordinator();\n  }\n  \n  addNode(node) {\n    this.nodes.push(node);\n    this.coordinator.register(node);\n  }\n}",
+      "back_related": ["Related concept 1", "Related concept 2", "Advanced topic"],
+      "back_mnemonics": "Memory aid: Remember the key principles using acronym XYZ",
+      "sources": ["Official documentation", "Research paper: Author et al.", "Best practices guide"]
+    },
+    {
+      "card_type": "Code Snippet",
+      "topic": "Programming",
+      "subtopic": "Advanced Patterns",
+      "title": "Design Pattern Implementation",
+      "difficulty": "hard",
+      "tags": ["design-patterns", "comprehensive", "implementation"],
+      "front_question_text": "Implement the Observer pattern in JavaScript",
+      "front_question_context": "Building reactive applications",
+      "front_question_hint": "Think about subject-observer relationship",
+      "front_question_example": "Event system, model-view updates",
+      "front_question_multiple_choice": [
+        {
+          "choice_letter": "A",
+          "text": "Use inheritance only",
+          "explanation": "Incorrect - Observer pattern uses composition"
+        },
+        {
+          "choice_letter": "B", 
+          "text": "Implement subject and observer interfaces",
+          "explanation": "Correct - This is the standard approach"
+        },
+        {
+          "choice_letter": "C",
+          "text": "Use global variables",
+          "explanation": "Incorrect - This violates encapsulation"
+        }
+      ],
+      "back_answer": "Implement Subject class with observer list and notify method",
+      "back_explanation": "Observer pattern defines one-to-many dependency between objects. When subject changes state, all observers are notified automatically.",
+      "back_code_solution": "class Subject {\n  constructor() {\n    this.observers = [];\n  }\n  \n  subscribe(observer) {\n    this.observers.push(observer);\n  }\n  \n  notify(data) {\n    this.observers.forEach(obs => obs.update(data));\n  }\n}\n\nclass Observer {\n  update(data) {\n    console.log('Received:', data);\n  }\n}",
+      "back_related": ["Pub/Sub pattern", "MVC architecture", "Event-driven programming"],
+      "sources": ["Design Patterns: GoF", "JavaScript Design Patterns"]
+    }
+  ]
+}

@@ -4,6 +4,7 @@ from .iterative_flashcard_workflow import IterativeFlashcardGenerator, Iterative
 from .topic_workflow import TopicWorkflow, TopicState
 from .module_workflow import ModuleWorkflow, ModuleState
 from .subject_workflow import SubjectWorkflow, SubjectState
+from .example_workflow import ExampleWorkflow
 
 __all__ = [
     "BaseWorkflow",
@@ -17,5 +18,6 @@ __all__ = [
     "ModuleWorkflow", 
     "ModuleState",
     "SubjectWorkflow",
-    "SubjectState"
+    "SubjectState",
+    "ExampleWorkflow"
 ]
