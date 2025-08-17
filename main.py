@@ -13,6 +13,7 @@ from ankigen.workflows import (
 )
 from ankigen.models.anki_card import AnkiCard
 from ankigen.packagers.anki_deck_packager import AnkiDeckPackager
+from ankigen.packagers.html_preview_packager import HtmlPreviewPackager
 from ankigen.utils.template_manager import list_templates
 
 FORMAT = "%(message)s"
@@ -105,6 +106,14 @@ def generate(
             show_default=False
         )
     ] = None,
+    preview: Annotated[
+        bool,
+        typer.Option(
+            "--preview", "-p",
+            help="Generate HTML preview instead of Anki deck file",
+            show_default=False
+        )
+    ] = False,
 ):
     """
     Generates a new Anki deck with flashcards for a specified topic.
@@ -187,16 +196,34 @@ def generate(
         #    log.info(f"\n--- Card {i+1} (Pydantic Object) ---")
 #    print(card_obj.model_dump_json(indent=2))
 
-# --- Create and Package the Anki Deck ---
+# --- Create and Package Output ---
     deck_name = topic
-    deck_output_filepath = os.path.join("decks", output_filename)
-
-    log.info(f"\n--- Creating Anki Deck: '{deck_name}' ---")
-
-    packager = AnkiDeckPackager(deck_name=deck_name, template=template)
-    packager.package_deck(generated_cards, deck_output_filepath)
-
-    log.info(f"Anki deck generation complete. File saved to: {deck_output_filepath}")
+    
+    if preview:
+        # Generate HTML preview
+        if output_filename.endswith('.apkg'):
+            html_filename = output_filename.replace('.apkg', '.html')
+        else:
+            html_filename = output_filename + '.html'
+        html_output_filepath = os.path.join("previews", html_filename)
+        
+        log.info(f"\n--- Creating HTML Preview: '{deck_name}' ---")
+        
+        preview_packager = HtmlPreviewPackager(title=f"Preview: {deck_name}")
+        preview_packager.package_preview(generated_cards, html_output_filepath)
+        
+        log.info(f"HTML preview generation complete. File saved to: {html_output_filepath}")
+        log.info(f"Open in browser: file://{os.path.abspath(html_output_filepath)}")
+    else:
+        # Generate Anki deck
+        deck_output_filepath = os.path.join("decks", output_filename)
+        
+        log.info(f"\n--- Creating Anki Deck: '{deck_name}' ---")
+        
+        packager = AnkiDeckPackager(deck_name=deck_name, template=template)
+        packager.package_deck(generated_cards, deck_output_filepath)
+        
+        log.info(f"Anki deck generation complete. File saved to: {deck_output_filepath}")
 
 if __name__ == "__main__":
     app()

@@ -76,6 +76,9 @@ uv run main.py generate --topic "Spanish Grammar" --num-cards 15 --domain langua
 
 # Few-shot prompting with programming examples  
 uv run main.py generate --topic "Python Functions" --num-cards 10 --domain programming
+
+# Generate HTML preview for quick review (instead of Anki deck)
+uv run main.py generate --topic "Spanish Grammar" --num-cards 10 --domain language --preview
 ```
 
 **Available domains**: `language`, `programming`. Domain examples help the LLM generate cards with appropriate formatting and style for specific subject areas.
@@ -90,6 +93,7 @@ uv run main.py generate --topic "Python Functions" --num-cards 10 --domain progr
 * `--deck-name`, `-d`: The name of the Anki deck that appears in Anki (default: Generated Flashcards: [Topic]).
 * `--template`, `-r`: The Anki card template to use ("basic" or "comprehensive").
 * `--domain`, `-x`: Domain for few-shot examples: 'language', 'programming', etc. Leave empty for zero-shot prompting.
+* `--preview`, `-p`: Generate HTML preview for quick review instead of Anki deck.
 * `--session-id`, `-s`: A unique ID for this generation session (for resuming). If not provided, a new one will be generated.
 
 ##### Environment Variables:
