@@ -25,9 +25,9 @@ class ModuleWorkflow(BaseWorkflow):
     Coordinates multiple TopicWorkflow instances.
     """
     
-    def __init__(self, llm_model_name: str = "gemini-2.0-flash"):
+    def __init__(self, llm_model_name: str = "gemini-2.0-flash", domain: Optional[str] = None):
         super().__init__(llm_model_name)
-        self.topic_workflow = TopicWorkflow(llm_model_name)
+        self.topic_workflow = TopicWorkflow(llm_model_name, domain)
     
     def _compile_workflow(self):
         workflow = StateGraph(ModuleState)

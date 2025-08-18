@@ -29,6 +29,7 @@ class AnkiCard(BaseModel):
     title: Optional[str] = Field(None, description="A unique, descriptive title for this card.")
     difficulty: Optional[str] = Field(None, description="The difficulty level of the card (e.g., easy, medium, hard).")
     tags: Optional[List[str]] = Field(None, description="A list of tags for this card.")
+    flippable: Optional[bool] = Field(None, description="Whether this card can be flipped to the back.")
 
     # Front of the Card (Question Section)
     front_question_text: str = Field(description="The main question text for the front of the card.")

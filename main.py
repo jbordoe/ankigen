@@ -151,7 +151,7 @@ def generate(
         )
     elif workflow == "module":
         # Break module into topics (default)
-        generator = ModuleWorkflow(llm_model_name=model_name)
+        generator = ModuleWorkflow(llm_model_name=model_name, domain=domain)
         final_state = generator.invoke(
             {
                 "topic": topic,
@@ -161,7 +161,7 @@ def generate(
         )
     elif workflow == "subject":
         # Multi-module subject approach
-        generator = SubjectWorkflow(llm_model_name=model_name)
+        generator = SubjectWorkflow(llm_model_name=model_name, domain=domain)
         final_state = generator.invoke(
             {
                 "topic": topic,

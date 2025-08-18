@@ -28,7 +28,7 @@ class ExampleWorkflow:
         Load examples for the specified domain or return empty list for zero-shot.
         
         Args:
-            domain: Domain name (e.g., 'language', 'programming') or None for zero-shot
+            domain: Domain name (e.g., 'language', 'language-vocabulary', 'programming') or None for zero-shot
             
         Returns:
             List of example card dictionaries, empty list if domain not found or None
@@ -36,8 +36,14 @@ class ExampleWorkflow:
         if domain is None:
             log.info("No domain specified - using zero-shot prompting")
             return []
-            
-        domain_file = self.examples_dir / "domains" / f"{domain}.json"
+        
+        # Handle nested domains (e.g., 'language-vocabulary' -> 'language/vocabulary.json')
+        if '-' in domain:
+            parts = domain.split('-', 1)
+            domain_file = self.examples_dir / "domains" / parts[0] / f"{parts[1]}.json"
+        else:
+            # Handle flat domains (e.g., 'language' -> 'language.json')
+            domain_file = self.examples_dir / "domains" / f"{domain}.json"
         
         if not domain_file.exists():
             log.warning(f"Domain file not found: {domain_file}. Using zero-shot prompting.")
@@ -136,17 +142,25 @@ class ExampleWorkflow:
     
     def list_available_domains(self) -> List[str]:
         """
-        List all available domain files.
+        List all available domain files, including nested domains.
         
         Returns:
-            List of domain names (without .json extension)
+            List of domain names (flat domains as 'domain', nested as 'domain-subdomain')
         """
         domains_dir = self.examples_dir / "domains"
         if not domains_dir.exists():
             return []
             
         domain_files = []
+        
+        # Find flat domain files (e.g., programming.json)
         for file_path in domains_dir.glob("*.json"):
             domain_files.append(file_path.stem)
+        
+        # Find nested domain files (e.g., language/vocabulary.json -> language-vocabulary)
+        for subdir in domains_dir.iterdir():
+            if subdir.is_dir():
+                for file_path in subdir.glob("*.json"):
+                    domain_files.append(f"{subdir.name}-{file_path.stem}")
             
         return sorted(domain_files)

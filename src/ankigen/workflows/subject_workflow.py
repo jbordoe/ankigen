@@ -26,9 +26,9 @@ class SubjectWorkflow(BaseWorkflow):
     This creates a superdeck with multiple subdecks for complex learning domains.
     """
     
-    def __init__(self, llm_model_name: str = "gemini-2.0-flash"):
+    def __init__(self, llm_model_name: str = "gemini-2.0-flash", domain: Optional[str] = None):
         super().__init__(llm_model_name)
-        self.module_workflow = ModuleWorkflow(llm_model_name)
+        self.module_workflow = ModuleWorkflow(llm_model_name, domain)
     
     def _compile_workflow(self):
         workflow = StateGraph(SubjectState)
