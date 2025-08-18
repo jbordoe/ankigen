@@ -164,3 +164,14 @@ class ExampleWorkflow:
                     domain_files.append(f"{subdir.name}-{file_path.stem}")
             
         return sorted(domain_files)
+    
+    @classmethod
+    def get_available_domains(cls) -> List[str]:
+        """
+        Convenience class method to get available domains without instantiating.
+        
+        Returns:
+            List of available domain names
+        """
+        workflow = cls()
+        return workflow.list_available_domains()

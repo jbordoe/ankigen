@@ -20,6 +20,7 @@ from ankigen.services import (
     OutputConfig, 
     GenerationResult
 )
+from ankigen.workflows.example_workflow import ExampleWorkflow
 from ankigen.models.anki_card import AnkiCard
 from ankigen.packagers.anki_deck_packager import AnkiDeckPackager
 
@@ -219,14 +220,18 @@ class StatusWidget(QWidget):
     def set_progress(self, value: int):
         self.progress_bar.setValue(value)
 
-    def update_stats(self, result: GenerationResult = None):
+    def update_stats(self, result: GenerationResult = None, domain: str = None):
         if result:
             self.cards_generated_label.setText(f"Cards Generated: {len(result.cards)}")
             self.session_id_label.setText(f"Session ID: {result.session_id[:8]}...")
             self.workflow_label.setText(f"Workflow: {result.workflow_used}")
             
-            # Try to extract domain from the result (would need service enhancement)
-            self.domain_label.setText("Domain: -")
+            # Show domain if provided
+            if domain:
+                display_domain = domain.replace('-', ' → ').title()
+                self.domain_label.setText(f"Domain: {display_domain}")
+            else:
+                self.domain_label.setText("Domain: Zero-shot")
         else:
             self.cards_generated_label.setText("Cards Generated: 0")
             self.session_id_label.setText("Session ID: -")
@@ -312,10 +317,23 @@ class EnhancedFlashcardApp(QMainWindow):
         settings_layout.addWidget(self.template_dropdown, 1, 1)
         
         settings_layout.addWidget(QLabel("Domain:"), 2, 0)
-        self.domain_input = QLineEdit()
-        self.domain_input.setPlaceholderText("e.g., language-vocabulary, programming")
-        self.domain_input.setToolTip("Optional: Use few-shot examples from a specific domain")
-        settings_layout.addWidget(self.domain_input, 2, 1)
+        self.domain_dropdown = QComboBox()
+        self.domain_dropdown.setEditable(False)
+        self.domain_dropdown.setToolTip("Optional: Use few-shot examples from a specific domain")
+        
+        # Populate domain options
+        try:
+            domains = ExampleWorkflow.get_available_domains()
+            self.domain_dropdown.addItem("None (Zero-shot)", "")  # Default option
+            for domain in domains:
+                # Create user-friendly display names
+                display_name = domain.replace('-', ' → ').title()
+                self.domain_dropdown.addItem(display_name, domain)
+        except Exception as e:
+            log.warning(f"Could not load available domains: {e}")
+            self.domain_dropdown.addItem("None (Zero-shot)", "")
+        
+        settings_layout.addWidget(self.domain_dropdown, 2, 1)
         
         layout.addWidget(settings_group)
         
@@ -462,12 +480,13 @@ class EnhancedFlashcardApp(QMainWindow):
         self._set_generation_state(True)
         
         # Get parameters
+        domain_value = self.domain_dropdown.currentData()  # Gets the stored value, not display text
         request = GenerationRequest(
             topic=topic,
             num_cards=self.num_cards_spinbox.value(),
             template=self.template_dropdown.currentText(),
             workflow=self.workflow_dropdown.currentText(),
-            domain=self.domain_input.text().strip() or None,
+            domain=domain_value if domain_value else None,
             session_id=self.session_id_input.text().strip() or None
         )
         
@@ -492,7 +511,10 @@ class EnhancedFlashcardApp(QMainWindow):
         """Handle successful generation completion."""
         self.current_generated_cards = result.cards
         self.card_preview.set_cards(result.cards)
-        self.status_widget.update_stats(result)
+        
+        # Pass domain info to status widget
+        domain_value = self.domain_dropdown.currentData()
+        self.status_widget.update_stats(result, domain_value)
         self.status_widget.set_status(f"✅ Generated {len(result.cards)} cards successfully!")
         
         self.statusBar().showMessage(
@@ -578,13 +600,13 @@ class EnhancedFlashcardApp(QMainWindow):
         self.num_cards_spinbox.setEnabled(not generating)
         self.workflow_dropdown.setEnabled(not generating)
         self.template_dropdown.setEnabled(not generating)
-        self.domain_input.setEnabled(not generating)
+        self.domain_dropdown.setEnabled(not generating)
         self.session_id_input.setEnabled(not generating)
 
     def _new_generation(self):
         """Start a new generation (clear previous state)."""
         self.topic_input.clear()
-        self.domain_input.clear()
+        self.domain_dropdown.setCurrentIndex(0)  # Reset to "None (Zero-shot)"
         self.session_id_input.clear()
         self.num_cards_spinbox.setValue(10)
         self.workflow_dropdown.setCurrentText("module")
