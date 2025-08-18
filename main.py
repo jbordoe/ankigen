@@ -2,18 +2,15 @@ import os
 import logging
 import typer
 from typing_extensions import Annotated
-import uuid
 
 from rich.logging import RichHandler, Console
-from typing import List, Optional
+from typing import Optional
 
-from ankigen.workflows import (
-    TopicWorkflow, ModuleWorkflow, SubjectWorkflow,
-    IterativeFlashcardGenerator
+from ankigen.services import (
+    FlashcardGenerationService, 
+    GenerationRequest, 
+    OutputConfig
 )
-from ankigen.models.anki_card import AnkiCard
-from ankigen.packagers.anki_deck_packager import AnkiDeckPackager
-from ankigen.packagers.html_preview_packager import HtmlPreviewPackager
 from ankigen.utils.template_manager import list_templates
 
 FORMAT = "%(message)s"
@@ -118,112 +115,41 @@ def generate(
     """
     Generates a new Anki deck with flashcards for a specified topic.
     """
-    if not os.environ.get("GOOGLE_API_KEY"):
-        log.error("GOOGLE_API_KEY environment variable not set. Please set it to your Google Cloud API key.")
+    try:
+        # Initialize service
+        service = FlashcardGenerationService()
+        
+        # Create generation request
+        request = GenerationRequest(
+            topic=topic,
+            num_cards=num_cards,
+            model_name=model_name,
+            deck_name=deck_name,
+            session_id=session_id,
+            workflow=workflow,
+            domain=domain,
+            template=template
+        )
+        
+        # Create output configuration
+        output_config = OutputConfig(
+            output_type="preview" if preview else "anki",
+            filename=output_filename
+        )
+        
+        # Generate flashcards
+        result = service.generate_flashcards(request, output_config)
+        
+        log.info(f"Generation completed successfully!")
+        log.info(f"Generated {len(result.cards)} cards using '{result.workflow_used}' workflow")
+        log.info(f"Session ID: {result.session_id}")
+        
+    except (ValueError, RuntimeError) as e:
+        log.error(f"Generation failed: {e}")
         raise typer.Exit(code=1)
-
-    if deck_name is None:
-        deck_name = f"Generated Flashcards: {topic}"
-
-    # Generate a new session ID if not provided
-    if session_id is None:
-        session_id = str(uuid.uuid4())
-        log.info(f"No session ID provided. Generating new session ID: {session_id}")
-    else:
-        log.info(f"Using provided session ID: {session_id} (Attempting to resume workflow)")
-
-    if domain:
-        log.info(f"Starting flashcard generation for topic: '{topic}', aiming for {num_cards} cards using model: '{model_name}' with '{workflow}' workflow and '{domain}' examples.")
-    else:
-        log.info(f"Starting flashcard generation for topic: '{topic}', aiming for {num_cards} cards using model: '{model_name}' with '{workflow}' workflow (zero-shot).")
-
-    # Select and run appropriate workflow
-    if workflow == "topic":
-        # Single topic with focused concepts
-        generator = TopicWorkflow(llm_model_name=model_name, domain=domain)
-        final_state = generator.invoke(
-            {
-                "topic": "General",  # Generic module
-                "subtopic": topic,
-                "num_cards": num_cards
-            },
-            session_id=session_id
-        )
-    elif workflow == "module":
-        # Break module into topics (default)
-        generator = ModuleWorkflow(llm_model_name=model_name, domain=domain)
-        final_state = generator.invoke(
-            {
-                "topic": topic,
-                "cards_per_topic": max(2, num_cards // 3)  # Distribute cards across topics
-            },
-            session_id=session_id
-        )
-    elif workflow == "subject":
-        # Multi-module subject approach
-        generator = SubjectWorkflow(llm_model_name=model_name, domain=domain)
-        final_state = generator.invoke(
-            {
-                "topic": topic,
-                "subject_name": deck_name,
-                "cards_per_module": num_cards
-            },
-            session_id=session_id
-        )
-    elif workflow == "iterative":
-        # Legacy iterative workflow
-        generator = IterativeFlashcardGenerator(llm_model_name=model_name)
-        final_state = generator.invoke(
-            {
-                "topic": topic,
-                "max_cards": num_cards,
-                "max_iterations": 5,
-                "cards_per_iteration": 5
-            },
-            session_id=session_id
-        )
-    else:
-        log.error(f"Unknown workflow type: {workflow}")
+    except Exception as e:
+        log.error(f"Unexpected error: {e}")
         raise typer.Exit(code=1)
-
-    generated_cards: List[AnkiCard] = final_state["all_generated_cards"]
-    if not generated_cards:
-        log.warning("No flashcards were generated. Exiting.")
-        raise typer.Exit(code=1)
-
-#log.info("\n--- All Generated Flashcards (Structured Data) ---")
-#for i, card_obj in enumerate(final_state["all_generated_cards"]):
-        #    log.info(f"\n--- Card {i+1} (Pydantic Object) ---")
-#    print(card_obj.model_dump_json(indent=2))
-
-# --- Create and Package Output ---
-    deck_name = topic
-    
-    if preview:
-        # Generate HTML preview
-        if output_filename.endswith('.apkg'):
-            html_filename = output_filename.replace('.apkg', '.html')
-        else:
-            html_filename = output_filename + '.html'
-        html_output_filepath = os.path.join("previews", html_filename)
-        
-        log.info(f"\n--- Creating HTML Preview: '{deck_name}' ---")
-        
-        preview_packager = HtmlPreviewPackager(title=f"Preview: {deck_name}")
-        preview_packager.package_preview(generated_cards, html_output_filepath)
-        
-        log.info(f"HTML preview generation complete. File saved to: {html_output_filepath}")
-        log.info(f"Open in browser: file://{os.path.abspath(html_output_filepath)}")
-    else:
-        # Generate Anki deck
-        deck_output_filepath = os.path.join("decks", output_filename)
-        
-        log.info(f"\n--- Creating Anki Deck: '{deck_name}' ---")
-        
-        packager = AnkiDeckPackager(deck_name=deck_name, template=template)
-        packager.package_deck(generated_cards, deck_output_filepath)
-        
-        log.info(f"Anki deck generation complete. File saved to: {deck_output_filepath}")
 
 if __name__ == "__main__":
     app()

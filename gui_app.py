@@ -9,7 +9,12 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import QThread, pyqtSignal # For threading
 
-from ankigen.agents.iterative_flashcard_workflow import IterativeFlashcardGenerator, IterativeFlashcardState
+from ankigen.services import (
+    FlashcardGenerationService, 
+    GenerationRequest, 
+    OutputConfig, 
+    GenerationResult
+)
 from ankigen.models.anki_card import AnkiCard
 from ankigen.packagers.anki_deck_packager import AnkiDeckPackager
 
@@ -28,63 +33,41 @@ class QTextEditLogger(logging.Handler):
         self.widget.append(msg)
 
 # --- Worker Thread for Flashcard Generation ---
-# This class will encapsulate the long-running LLM calls
 class FlashcardGeneratorWorker(QThread):
     """
-    Worker thread to run the IterativeFlashcardGenerator workflow.
+    Worker thread that uses FlashcardGenerationService for flashcard generation.
     Emits signals for progress updates and completion.
     """
-    finished = pyqtSignal(object) # Emits the final state on completion
+    finished = pyqtSignal(object) # Emits the GenerationResult on completion
     error = pyqtSignal(str)       # Emits error messages
-    log_message = pyqtSignal(str) # Emits log messages from the generator
+    log_message = pyqtSignal(str) # Emits log messages
 
-    def __init__(self, topic: str, max_cards: int, cards_per_iteration: int, max_iterations: int):
-        super().__init__()
-        self.topic = topic
-        self.max_cards = max_cards
-        self.cards_per_iteration = cards_per_iteration
-        self.max_iterations = max_iterations
+    def __init__(self, request: GenerationRequest, output_config: OutputConfig, parent=None):
+        super().__init__(parent)
+        self.request = request
+        self.output_config = output_config
         self._is_running = True
 
     def run(self):
         try:
-            # Initialize the generator (you might want to pass llm_model_name here)
-            generator = IterativeFlashcardGenerator()
-
-            # Set up a logger that emits signals to the GUI
-            # This is a bit tricky with existing rich logger, but we can add another handler
-            # Or, modify the IterativeFlashcardGenerator to take a logger instance.
-            # For simplicity for now, we'll assume the main rich logger.
-            # A more robust solution involves modifying generator to accept log handler or emit its own signals.
-            # For now, we'll rely on the main app's logging setup.
-
-            initial_state = IterativeFlashcardState(
-                topic=self.topic,
-                max_cards=self.max_cards,
-                cards_per_iteration=self.cards_per_iteration,
-                max_iterations=self.max_iterations,
-                all_generated_cards=[], # Initial empty lists
-                recent_concepts=[],
-                llm_completion_status="",
-                iteration_count=0,
-                overall_process_complete=False
-            )
-
-            # Invoke the workflow - THIS IS THE LONG-RUNNING CALL
-            # You can add a session_id here if you implement checkpointing in GUI
-            final_state = generator.invoke(initial_state)
+            # Initialize service
+            service = FlashcardGenerationService()
+            
+            # Generate flashcards - THIS IS THE LONG-RUNNING CALL
+            result = service.generate_flashcards(self.request, self.output_config)
 
             if self._is_running: # Only emit finished if not stopped prematurely
-                self.finished.emit(final_state)
-        except Exception as e:
+                self.finished.emit(result)
+        except (ValueError, RuntimeError) as e:
             self.error.emit(f"Generation error: {e}")
+        except Exception as e:
+            self.error.emit(f"Unexpected error: {e}")
         finally:
             self.log_message.emit("Flashcard generation thread finished.")
 
     def stop(self):
         self._is_running = False
-        # You might need to add logic within IterativeFlashcardGenerator to check this flag
-        # and gracefully exit its LangGraph workflow. This is more advanced.
+        # Note: More advanced graceful stopping would require workflow-level support
 
 
 class FlashcardApp(QMainWindow):
@@ -145,10 +128,24 @@ class FlashcardApp(QMainWindow):
         # Template Type Dropdown
         right_input_col.addWidget(QLabel("Template Type:"))
         self.template_type_dropdown = QComboBox()
-        self.template_type_dropdown.addItem("comprehensive")
         self.template_type_dropdown.addItem("basic")
-        self.template_type_dropdown.setCurrentText("basic") # Set basic as default for testing
+        self.template_type_dropdown.addItem("comprehensive") 
         right_input_col.addWidget(self.template_type_dropdown)
+
+        # Workflow Type Dropdown
+        right_input_col.addWidget(QLabel("Workflow Type:"))
+        self.workflow_dropdown = QComboBox()
+        self.workflow_dropdown.addItem("module")
+        self.workflow_dropdown.addItem("topic")
+        self.workflow_dropdown.addItem("subject")
+        self.workflow_dropdown.addItem("iterative")
+        right_input_col.addWidget(self.workflow_dropdown)
+
+        # Domain Input (optional)
+        right_input_col.addWidget(QLabel("Domain (Optional):"))
+        self.domain_input = QLineEdit("")
+        self.domain_input.setPlaceholderText("e.g., language-vocabulary, programming")
+        right_input_col.addWidget(self.domain_input)
 
         # Placeholder for Session ID/Checkpointing (future)
         right_input_col.addWidget(QLabel("Session ID (Optional):"))
@@ -227,12 +224,13 @@ class FlashcardApp(QMainWindow):
         self.generate_button.setEnabled(False)
         self.stop_button.setEnabled(True)
 
+        # Get values from GUI
         topic = self.topic_input.text()
-        max_cards = self.max_cards_spinbox.value()
-        cards_per_iteration = self.cards_per_iteration_spinbox.value()
-        max_iterations = self.max_iterations_spinbox.value()
-        # template_type is used by the AnkiDeckPackager, not directly by the generator's invoke()
-        #TODO: We'll need to pass it to the packager later.
+        num_cards = self.max_cards_spinbox.value()
+        template = self.template_type_dropdown.currentText()
+        workflow = self.workflow_dropdown.currentText()
+        domain = self.domain_input.text().strip() or None
+        session_id = self.session_id_input.text().strip() or None
 
         if not topic.strip():
             QMessageBox.warning(self, "Input Error", "Please enter a topic.")
@@ -240,30 +238,50 @@ class FlashcardApp(QMainWindow):
             self.stop_button.setEnabled(False)
             return
 
+        # Create generation request
+        request = GenerationRequest(
+            topic=topic,
+            num_cards=num_cards,
+            template=template,
+            workflow=workflow,
+            domain=domain,
+            session_id=session_id
+        )
+        
+        # Create output configuration (generate in memory, not to file)
+        output_config = OutputConfig(
+            output_type="anki",  # We'll handle the output internally
+            filename="temp.apkg"  # Placeholder, won't be used
+        )
+
         log.info(f"Starting generation for topic: '{topic}'")
-        log.info(f"Max Cards: {max_cards}, Cards/Iteration: {cards_per_iteration}, Max Iterations: {max_iterations}")
+        log.info(f"Cards: {num_cards}, Workflow: {workflow}, Template: {template}")
+        if domain:
+            log.info(f"Using domain: {domain}")
 
         # Instantiate and start the worker thread
         self.generator_thread = FlashcardGeneratorWorker(
-            topic=topic,
-            max_cards=max_cards,
-            cards_per_iteration=cards_per_iteration,
-            max_iterations=max_iterations
+            request=request,
+            output_config=output_config,
+            parent=self
         )
         self.generator_thread.finished.connect(self._generation_finished)
+        self.generator_thread.finished.connect(self.generator_thread.deleteLater) # Schedule for deletion
         self.generator_thread.error.connect(self._generation_error)
         # Connect log_message signal from worker to update GUI log
         self.generator_thread.log_message.connect(self.log_output.append)
         self.generator_thread.start() # This calls the run() method in the thread
 
 
-    def _generation_finished(self, final_state: IterativeFlashcardState):
+    def _generation_finished(self, result: GenerationResult):
         """
         Callback when the generation thread finishes.
         """
         log.info("Flashcard generation complete!")
-        self.current_generated_cards = final_state['all_generated_cards']
+        self.current_generated_cards = result.cards
         log.info(f"Total cards generated: {len(self.current_generated_cards)}")
+        log.info(f"Workflow used: {result.workflow_used}")
+        log.info(f"Session ID: {result.session_id}")
 
         self.generate_button.setEnabled(True)
         self.stop_button.setEnabled(False)
@@ -327,7 +345,7 @@ class FlashcardApp(QMainWindow):
                 # Instantiate AnkiDeckPackager with the selected template type
                 packager = AnkiDeckPackager(
                     deck_name=f"{self.topic_input.text()} ({selected_template_type})",
-                    template_type=selected_template_type
+                    template=selected_template_type
                 )
                 packager.package_deck(self.current_generated_cards, file_path)
                 QMessageBox.information(self, "Export Successful", f"Anki deck saved to:\n{file_path}")
