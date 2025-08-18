@@ -35,7 +35,7 @@ class AnkiCard(BaseModel):
     front_question_text: str = Field(description="The main question text for the front of the card.")
     front_question_context: Optional[str] = Field(None, description="When or where the question is relevant.")
     front_question_hint: Optional[str] = Field(None, description="A helpful clue for the question.")
-    front_question_example: Optional[str] = Field(None, description='An example like "Das ist ein **Haus**." or `User.find(id)`.')
+    front_question_example: Optional[str] = Field(None, description='An example like "Das ist ein `Haus`." or `User.find(id)`.')
     front_question_code: Optional[str] = Field(None, description="Code to analyze or complete for the question.")
     front_question_media: Optional[CardMedia] = Field(None, description="Optional image or audio links for the question.")
     front_question_multiple_choice: Optional[List[MultipleChoiceOption]] = Field(None, description="List of multiple choice options.")
