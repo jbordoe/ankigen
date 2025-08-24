@@ -1,7 +1,5 @@
-import json
 import logging
 import os
-import re
 import sqlite3
 from typing import List, TypedDict
 
@@ -142,6 +140,7 @@ class SubtopicIdentificationGraph:
                 "overall_process_complete": True,
             }
 
+        topic = state["topic"]
         log.info(f"Evaluating topic coverage for '{topic}' (Iteration {iteration_count + 1})...")
 
         # Provide context of what's been covered to the LLM

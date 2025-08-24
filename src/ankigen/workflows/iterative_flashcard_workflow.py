@@ -118,7 +118,7 @@ class IterativeFlashcardGenerator(BaseWorkflow):
             "Otherwise, omit optional fields. "
             "Generate as many cards as possible for the provided concepts, avoiding truncation or repetition.\n"
             "Strictly adhere to the following JSON array format. Do not include any other text or conversational elements:\n"
-            "[\n  {{ 'Type': 'Basic', 'Topic': '...', ... }},\n  {{ 'Type': 'Basic', 'Topic': '...', ... }}\n]\n"
+            "[\n  {{ 'type': 'Basic', 'topic': '...', ... }},\n  {{ 'type': 'Basic', 'topic': '...', ... }}\n]\n"
             "{format_instructions}\n"
         ).partial(format_instructions=self.anki_card_parser.get_format_instructions())
 
@@ -143,6 +143,8 @@ class IterativeFlashcardGenerator(BaseWorkflow):
             generated_anki_cards = []
             for card_dict in parsed_raw_cards:
                 try:
+                    # convert keys to snake_case
+                    card_dict = {k.lower().replace(" ", "_"): v for k, v in card_dict.items()}
                     generated_anki_cards.append(AnkiCard(**card_dict))
                 except Exception as card_e:
                     log.warning(f"Failed to parse individual card: {card_e} - {card_dict}")
@@ -221,7 +223,7 @@ class IterativeFlashcardGenerator(BaseWorkflow):
 
         # Provide context of what's been covered to the LLM
         # Summarize cards for context (avoiding context window limits)
-        card_summaries = [f"- {card.front.question.question[:50]}..." for card in all_generated_cards[:10]] # Limit context
+        card_summaries = [f"- {card.title}" for card in all_generated_cards[:10]]
         existing_context = "\n".join(card_summaries) if card_summaries else "No cards generated yet."
         if len(all_generated_cards) > 10:
             existing_context += f"\n... (and {len(all_generated_cards) - 10} more cards)"

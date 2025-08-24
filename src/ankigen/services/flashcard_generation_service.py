@@ -121,8 +121,8 @@ class FlashcardGenerationService:
             raise ValueError(f"Unknown workflow type: {request.workflow}")
         
         # Validate num_cards range
-        if request.num_cards < 1 or request.num_cards > 50:
-            raise ValueError("Number of cards must be between 1 and 50")
+        if request.num_cards < 1 or request.num_cards > 100:
+            raise ValueError("Number of cards must be between 1 and 100")
         
         return GenerationRequest(
             topic=request.topic,
