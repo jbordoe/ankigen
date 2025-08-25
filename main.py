@@ -208,19 +208,29 @@ def learn(
             show_default=False
         )
     ] = False,
+    llm_provider: Annotated[
+        str,
+        typer.Option(
+            "--llm-provider", "-l",
+            help="LLM provider for intent analysis: 'google' (Gemini) or 'anthropic' (Claude)",
+            show_default=True
+        )
+    ] = "google",
 ):
     """
     Natural language interface: describe what you want to learn and let the LLM plan your flashcards.
     
     Examples:
     - "I want to learn Spanish cooking vocabulary for my trip to Barcelona"
-    - "Help me understand Python data structures and algorithms"
+    - "Help me understand Python data structures and algorithms"  
     - "Quick review of calculus derivatives before my exam"
+    
+    Requires either GOOGLE_API_KEY (for Gemini) or ANTHROPIC_API_KEY (for Claude) environment variable.
     """
     try:
-        # Initialize intent analyzer
-        log.info("🤔 Analyzing your learning request...")
-        analyzer = IntentAnalyzer()
+        # Initialize intent analyzer with chosen provider
+        log.info(f"🤔 Analyzing your learning request using {llm_provider.title()}...")
+        analyzer = IntentAnalyzer(provider=llm_provider)
         
         # Parse the natural language request
         intent = analyzer.analyze_intent(request)

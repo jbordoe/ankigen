@@ -7,11 +7,21 @@ into structured learning plans for flashcard generation.
 
 import json
 import re
-from typing import List, Optional, Dict, Any
+import os
+from typing import List, Optional, Dict, Any, Union
 
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.schema import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
+
+try:
+    from langchain_google_genai import ChatGoogleGenerativeAI
+except ImportError:
+    ChatGoogleGenerativeAI = None
+
+try:
+    from langchain_anthropic import ChatAnthropic
+except ImportError:
+    ChatAnthropic = None
 
 from ..models.learning_intent import (
     LearningIntent, 
@@ -51,11 +61,51 @@ class IntentAnalysisResult(BaseModel):
 class IntentAnalyzer:
     """Service for analyzing natural language learning intent using LLMs."""
     
-    def __init__(self, llm: Optional[ChatGoogleGenerativeAI] = None):
-        self.llm = llm or ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash",
-            temperature=0.3
-        )
+    def __init__(self, llm: Optional[Union[ChatGoogleGenerativeAI, ChatAnthropic]] = None, provider: str = "google"):
+        """
+        Initialize the intent analyzer with specified LLM provider.
+        
+        Args:
+            llm: Pre-configured LLM instance (optional)
+            provider: LLM provider ("google" for Gemini, "anthropic" for Claude)
+        """
+        if llm is not None:
+            self.llm = llm
+        else:
+            self.llm = self._create_llm(provider)
+    
+    def _create_llm(self, provider: str) -> Union[ChatGoogleGenerativeAI, ChatAnthropic]:
+        """Create LLM instance based on provider choice."""
+        if provider.lower() == "anthropic" or provider.lower() == "claude":
+            if ChatAnthropic is None:
+                raise ImportError("langchain-anthropic is required for Claude. Install with: uv add langchain-anthropic")
+            
+            api_key = os.getenv("ANTHROPIC_API_KEY")
+            if not api_key:
+                raise ValueError("ANTHROPIC_API_KEY environment variable is required for Claude")
+            
+            return ChatAnthropic(
+                model="claude-3-5-sonnet-20241022",
+                temperature=0.3,
+                api_key=api_key
+            )
+        
+        elif provider.lower() == "google" or provider.lower() == "gemini":
+            if ChatGoogleGenerativeAI is None:
+                raise ImportError("langchain-google-genai is required for Gemini. Install with: uv add langchain-google-genai")
+            
+            api_key = os.getenv("GOOGLE_API_KEY")
+            if not api_key:
+                raise ValueError("GOOGLE_API_KEY environment variable is required for Gemini")
+            
+            return ChatGoogleGenerativeAI(
+                model="gemini-1.5-flash",
+                temperature=0.3,
+                google_api_key=api_key
+            )
+        
+        else:
+            raise ValueError(f"Unsupported provider: {provider}. Use 'google' or 'anthropic'")
     
     def analyze_intent(self, user_input: str) -> LearningIntent:
         """
